@@ -34,8 +34,8 @@ class Wire:
                         location[0] - 1, location[0] - int(direction[1:]) - 1, -1
                     )
                 ]
-                points.extend(new_points)
                 location = list(new_points)[-1]
+                points.extend(new_points)
             elif direction[0] == "R":
                 new_points = [
                     (x, location[1])
@@ -43,8 +43,8 @@ class Wire:
                         location[0] + 1, location[0] + int(direction[1:]) + 1
                     )
                 ]
-                points.extend(new_points)
                 location = list(new_points)[-1]
+                points.extend(new_points)
 
         return points
 
