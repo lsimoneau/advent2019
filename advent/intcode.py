@@ -1,4 +1,10 @@
+from io import StringIO
 from typing import List
+import asyncio
+
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Instruction:
@@ -18,19 +24,39 @@ def __main__() -> None:
     with open("input/02.txt") as file_input:
         symbols = file_input.read().strip("\n").split(",")
         code = [int(symbol) for symbol in symbols]
-        output = run(code, 12, 2)
+        output = asyncio.run(run(code, 12, 2))
         print(output)
 
 
-def run(code: List[int], input_1: int, input_2: int) -> int:
+async def run(code: List[int], input_1: int, input_2: int) -> int:
     program = code.copy()
     program[1] = input_1
     program[2] = input_2
-    output = compute(program)
+    output = await compute(program)
     return output[0]
 
 
-def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
+async def run_io(inputs, program):
+    iq = asyncio.Queue()
+    oq = asyncio.Queue()
+    asyncio.create_task(compute(program, iq, oq))
+    for i in inputs:
+        iq.put_nowait(i)
+    return await oq.get()
+
+
+async def compute_io(input_vals: List[int], program) -> int:
+    my_input: asyncio.Queue = asyncio.Queue()
+    my_output: asyncio.Queue = asyncio.Queue()
+
+    for i in input_vals:
+        my_input.put_nowait(i)
+
+    task = asyncio.create_task(compute(program, my_input, my_output))
+    return await my_output.get()
+
+
+async def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
     program = program.copy()
     cursor = 0
 
@@ -60,9 +86,10 @@ def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
         elif instruction.opcode == 2:
             program[target] = program[x] * program[y]
         elif instruction.opcode == 3:
-            program[x] = int(user_in.readline())
+            next_input = await user_in.get()
+            program[x] = int(next_input)
         elif instruction.opcode == 4:
-            user_out.write(f"{program[x]}\n")
+            user_out.put_nowait(program[x])
         elif instruction.opcode == 7:
             program[target] = int(program[x] < program[y])
         elif instruction.opcode == 8:
