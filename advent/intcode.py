@@ -12,7 +12,7 @@ class Instruction:
         padded = str(inst).zfill(5)
         self.opcode = int(padded[-2:])
         self.modes = int(padded[0]), int(padded[1]), int(padded[2])
-        if self.opcode == 3 or self.opcode == 4:
+        if self.opcode == 3 or self.opcode == 4 or self.opcode == 9:
             self.size = 2
         elif self.opcode == 5 or self.opcode == 6:
             self.size = 3
@@ -45,21 +45,12 @@ async def run_io(inputs, program):
     return await oq.get()
 
 
-async def compute_io(input_vals: List[int], program) -> int:
-    my_input: asyncio.Queue = asyncio.Queue()
-    my_output: asyncio.Queue = asyncio.Queue()
-
-    for i in input_vals:
-        my_input.put_nowait(i)
-
-    task = asyncio.create_task(compute(program, my_input, my_output))
-    return await my_output.get()
-
-
 async def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
-    program = program.copy()
+    program = program + [0] * (100000 - len(program))
     cursor = 0
+    relative_base = 0
 
+    # test case for 2102
     while True:
         instruction = Instruction(program[cursor])
         if instruction.opcode == 99:
@@ -67,17 +58,24 @@ async def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
 
         if instruction.modes[2] == 0:
             x = program[cursor + 1]
+        elif instruction.modes[2] == 2:
+            x = program[cursor + 1] + relative_base
         else:
             x = cursor + 1
 
-        if instruction.modes[1] == 0:
-            y = program[cursor + 2]
-        else:
-            y = cursor + 2
-
         if instruction.size > 2:
+            if instruction.modes[1] == 0:
+                y = program[cursor + 2]
+            elif instruction.modes[1] == 2:
+                y = program[cursor + 2] + relative_base
+            else:
+                y = cursor + 2
+
+        if instruction.size > 3:
             if instruction.modes[0] == 0:
                 target = program[cursor + 3]
+            elif instruction.modes[0] == 2:
+                target = program[cursor + 3] + relative_base
             else:
                 target = cursor + 3
 
@@ -94,6 +92,8 @@ async def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
             program[target] = int(program[x] < program[y])
         elif instruction.opcode == 8:
             program[target] = int(program[x] == program[y])
+        elif instruction.opcode == 9:
+            relative_base += program[x]
 
         if instruction.opcode == 5:
             if program[x] != 0:

@@ -34,7 +34,6 @@ class Orbit:
 
         return -1
 
-
     def parents(self, obj):
         try:
             parent = self.orbital_map[obj]
@@ -43,10 +42,9 @@ class Orbit:
         except KeyError:
             pass
 
-
     @classmethod
     def parse(cls, lines):
-        pattern = re.compile(r'^(\w+)\)(\w+)$')
+        pattern = re.compile(r"^(\w+)\)(\w+)$")
         orbital_map = {}
 
         for line in lines:
@@ -60,5 +58,5 @@ class Orbit:
 if __name__ == "__main__":
     with open("input/05.txt") as file_input:
         LINES = file_input.readlines()
-        #print(Orbit.parse(LINES).count_total())
-        print(Orbit.parse(LINES).dist('YOU','SAN'))
+        # print(Orbit.parse(LINES).count_total())
+        print(Orbit.parse(LINES).dist("YOU", "SAN"))

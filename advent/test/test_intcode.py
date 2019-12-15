@@ -5,32 +5,61 @@ import pytest
 pytestmark = pytest.mark.asyncio
 
 
-async def test_compute():
-    assert await compute([1, 0, 0, 0, 99]) == [2, 0, 0, 0, 99]
-
-
-async def test_mult():
-    assert await compute([2, 3, 0, 3, 99]) == [2, 3, 0, 6, 99]
-
-
-async def test_mult_term():
-    assert await compute([2, 4, 4, 5, 99, 0]) == [2, 4, 4, 5, 99, 9801]
-
-
-async def test_more_ops():
-    assert await compute([1, 1, 1, 4, 99, 5, 6, 0, 99]) == [30, 1, 1, 4, 2, 5, 6, 0, 99]
-
-
-async def test_parameter_modes():
-    assert await compute([1002, 4, 3, 4, 33]) == [1002, 4, 3, 4, 99]
-
-
-async def test_negative_numbers():
-    assert await compute([1101, 100, -1, 4, 0]) == [1101, 100, -1, 4, 99]
-
-
 async def test_input():
     assert await run_io([42], [3, 0, 4, 0, 99]) == 42
+
+
+async def test_large_number():
+    output = await run_io([], [1102, 34915192, 34915192, 7, 4, 7, 99, 0])
+    assert len(str(output)) == 16
+
+
+async def test_relative_mode():
+    program = [109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99]
+    iq = asyncio.Queue()
+    oq = asyncio.Queue()
+    task = asyncio.create_task(compute(program, iq, oq))
+    await task
+
+    output = []
+    while True:
+        try:
+            output.append(oq.get_nowait())
+        except asyncio.QueueEmpty:
+            break
+
+    assert output == program
+
+
+async def test_relative_mode_simple():
+    program = [109, 36, 204, -34, 99]
+    output = await run_io([], program)
+    assert output == 204
+
+
+async def test_relative_mode_input():
+    program = [109, 36, 203, 0, 204, 0, 99]
+    output = await run_io([42], program)
+    assert output == 42
+
+async def test_relative_mode_output():
+    program = [109, -1, 204, 1, 99]
+    output = await run_io([], program)
+    assert output == 109
+
+async def test_long_instruction():
+    program = [109, 36, 21102, 3, 4, 0, 204, 0, 99]
+    output = await run_io([], program)
+    assert output == 12
+
+async def test_relative_base_adjust():
+    program = [109, 36, 203, -2, 209, -2, 204, -41, 99]
+    output = await run_io([5], program)
+    assert output == 109
+
+async def test_output():
+    output = await run_io([], [104, 1125899906842624, 99])
+    assert output == 1125899906842624
 
 
 async def test_equals():
