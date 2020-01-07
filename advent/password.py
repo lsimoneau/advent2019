@@ -1,6 +1,5 @@
 from itertools import tee
 
-
 def _pairwise(iterable):
     x, y = tee(iterable)
     next(y, None)

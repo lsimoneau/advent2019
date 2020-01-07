@@ -1,5 +1,6 @@
+import sys
 import itertools
-from advent.intcode import compute, compute_io
+from advent.intcode import compute, run_io
 from io import StringIO
 import asyncio
 
@@ -7,7 +8,7 @@ import asyncio
 async def signal(program, settings):
     init = 0
     for setting in settings:
-        output = await compute_io([setting, init], program)
+        output = await run_io([setting, init], program)
         init = output
 
     return output

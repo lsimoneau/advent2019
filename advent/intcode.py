@@ -87,7 +87,7 @@ async def compute(program: List[int], user_in=None, user_out=None) -> List[int]:
             next_input = await user_in.get()
             program[x] = int(next_input)
         elif instruction.opcode == 4:
-            user_out.put_nowait(program[x])
+            await user_out.put(program[x])
         elif instruction.opcode == 7:
             program[target] = int(program[x] < program[y])
         elif instruction.opcode == 8:
